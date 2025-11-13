@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, FlatList, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Flag from '../../src/components/Flag';
 import { styled } from 'nativewind';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, getDoc, collection, query, onSnapshot } from 'firebase/firestore';
@@ -67,8 +68,17 @@ const LigaDetailScreen = () => {
                         className="p-4 border-b border-neutral-dark"
                         onPress={() => router.push(`/partido/${item.id}?leagueId=${id}`)}
                     >
-                        <StyledText className="text-white font-semibold">{item.teamA} vs. {item.teamB}</StyledText>
-                        <StyledText className="text-sm text-slate-400">{item.dateTime}</StyledText>
+                        {item.miniBannerUrl ? (
+                            <StyledImage source={{ uri: item.miniBannerUrl }} className="w-full h-20 rounded-lg mb-2" />
+                        ) : (
+                            <StyledView className="w-full h-20 rounded-lg mb-2 bg-neutral-dark/50" />
+                        )}
+                        <StyledView className="flex-row items-center">
+                            <Flag code={item.teamACode} />
+                            <StyledText className="text-white font-semibold mx-2">{item.teamA} vs. {item.teamB}</StyledText>
+                            <Flag code={item.teamBCode} />
+                        </StyledView>
+                        <StyledText className="text-sm text-slate-400 mt-1">{item.dateTime}</StyledText>
                     </StyledTouchableOpacity>
                 )}
                 ListEmptyComponent={<StyledText className="text-white text-center p-4">No hay partidos en esta liga.</StyledText>}
