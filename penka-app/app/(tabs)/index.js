@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import TermsAndConditionsModal from '../../src/components/TermsAndConditionsModal';
 import { styled } from 'nativewind';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -33,9 +34,16 @@ const InicioScreen = () => {
   const router = useRouter();
   const { user } = useGlobalContext();
   const [leagues, setLeagues] = useState([]);
+  const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isModalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
+    const unsubscribeBanners = onSnapshot(collection(db, 'banners'), (snapshot) => {
+        const bannersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setBanners(bannersData);
+    });
+
     if (user) {
       const q = query(collection(db, "leagues"), where("participants", "array-contains", user.uid));
       getDocs(q)
@@ -50,6 +58,8 @@ const InicioScreen = () => {
           setLoading(false);
         });
     }
+
+    return () => unsubscribeBanners();
   }, [user]);
 
   return (
@@ -65,6 +75,15 @@ const InicioScreen = () => {
       </StyledView>
 
       <StyledScrollView>
+        <StyledView className="py-6">
+            <StyledScrollView horizontal showsHorizontalScrollIndicator={false} className="pl-4">
+                {banners.map(banner => (
+                    <StyledTouchableOpacity key={banner.id} className="w-80 h-40 mr-4 rounded-lg overflow-hidden" onPress={() => banner.link && Linking.openURL(banner.link)}>
+                        <StyledImage source={{ uri: banner.imageUrl }} className="w-full h-full" />
+                    </StyledTouchableOpacity>
+                ))}
+            </StyledScrollView>
+        </StyledView>
         <StyledView className="py-6">
           <StyledText className="px-4 pb-4 text-2xl font-bold text-white">Mis Penkas</StyledText>
           {loading ? (
@@ -120,7 +139,31 @@ const InicioScreen = () => {
                 <MaterialCommunityIcons name="chevron-right" size={24} color="rgba(255,255,255,0.5)" />
             </StyledTouchableOpacity>
         </StyledView>
+        <StyledView className="py-6">
+            <StyledTouchableOpacity onPress={() => setModalVisible(true)} className="flex-row items-center gap-4 px-4 py-3">
+                <StyledView className="h-12 w-12 items-center justify-center rounded-lg bg-primary/20">
+                     <MaterialCommunityIcons name="file-document-outline" size={28} color="#1173d4" />
+                </StyledView>
+                <StyledText className="flex-1 font-semibold text-white">Términos y Condiciones</StyledText>
+                <MaterialCommunityIcons name="chevron-right" size={24} color="rgba(255,255,255,0.5)" />
+            </StyledTouchableOpacity>
+        </StyledView>
+        {user && user.uid === 'C52A774E-379E-4B9F-831B-E6D829B89A9A' && (
+            <StyledView className="py-6">
+                <StyledTouchableOpacity onPress={() => router.push('/admin/manage-banners')} className="flex-row items-center gap-4 px-4 py-3">
+                    <StyledView className="h-12 w-12 items-center justify-center rounded-lg bg-primary/20">
+                        <MaterialCommunityIcons name="image" size={28} color="#1173d4" />
+                    </StyledView>
+                    <StyledText className="flex-1 font-semibold text-white">Manage Banners</StyledText>
+                    <MaterialCommunityIcons name="chevron-right" size={24} color="rgba(255,255,255,0.5)" />
+                </StyledTouchableOpacity>
+            </StyledView>
+        )}
       </StyledScrollView>
+      <TermsAndConditionsModal
+        isVisible={isModalVisible}
+        onClose={() => setModalVisible(false)}
+      />
     </SafeAreaView>
   );
 };
